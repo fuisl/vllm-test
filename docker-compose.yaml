@@ -1,10 +1,10 @@
 services:
   vllm-embed:
     image: vllm/vllm-openai:latest
-    # user: "${UID}:${GID}" # for identify yourself in remote server
+    # user: "${UID}:${GID}"               # make sure UID/GID are defined in your .env
     gpus: all
     environment:
-      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
+      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}   # use this exact var name
       - XDG_CACHE_HOME=/home/fuisloy/.cache
       - HF_HOME=/home/fuisloy/.cache/huggingface
       - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
@@ -17,14 +17,15 @@ services:
       --model BAAI/bge-m3
       --host 0.0.0.0
       --port 8000
-      --gpu-memory-utilization 0.09
+      --gpu-memory-utilization 0.25
+    networks: [net]
 
   vllm-chat:
     image: vllm/vllm-openai:latest
-    # user: "${UID}:${GID}" 
+    # user: "${UID}:${GID}"               # make sure UID/GID are defined in your .env
     gpus: all
     environment:
-      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
+      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}   # use this exact var name
       - XDG_CACHE_HOME=/home/fuisloy/.cache
       - HF_HOME=/home/fuisloy/.cache/huggingface
       - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
@@ -35,13 +36,21 @@ services:
       - ${HOME}/.cache/hf-vllm:/home/fuisloy/.cache/huggingface
     ipc: host
     command: >
-      --model Qwen/Qwen2.5-7B-Instruct-AWQ
+      --model Qwen/Qwen2.5-7B-Instruct
       --host 0.0.0.0
       --port 8001
-      --gpu-memory-utilization 0.31
+      --gpu-memory-utilization 0.93
+    networks: [net]
 
   proxy:
     image: nginx:alpine
     ports: ["8002:80"]
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - vllm-embed
+      - vllm-chat
+    networks: [net]
+  
+networks:
+  net:

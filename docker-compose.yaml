@@ -1,56 +1,96 @@
 services:
   vllm-embed:
+    # build: .
     image: vllm/vllm-openai:latest
     # user: "${UID}:${GID}"               # make sure UID/GID are defined in your .env
     gpus: all
     environment:
       - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}   # use this exact var name
-      - XDG_CACHE_HOME=/home/fuisloy/.cache
+      - XDG_CACHE_HOME=/home/fuisloy/.cache  # change user
       - HF_HOME=/home/fuisloy/.cache/huggingface
       - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
     ports:
       - "8000:8000"
     volumes:
-      - ${HOME}/.cache/hf-vllm:/home/fuisloy/.cache/huggingface
+      - ${HOME}/.cache/huggingface:/home/fuisloy/.cache/huggingface
     ipc: host
     command: >
       --model BAAI/bge-m3
       --host 0.0.0.0
       --port 8000
-      --gpu-memory-utilization 0.25
-    networks: [net]
+      --gpu-memory-utilization 0.1
+  #   # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+    # depends_on:
+    #   vllm-chat:
+    #     condition: service_healthy
+    # networks: [net]
 
   vllm-chat:
+    # build: .
     image: vllm/vllm-openai:latest
     # user: "${UID}:${GID}"               # make sure UID/GID are defined in your .env
     gpus: all
     environment:
       - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}   # use this exact var name
-      - XDG_CACHE_HOME=/home/fuisloy/.cache
+      - XDG_CACHE_HOME=/home/fuisloy/.cache # change user
       - HF_HOME=/home/fuisloy/.cache/huggingface
       - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
       - VLLM_USE_TRITON_FLASH_ATTENTION=0
     ports:
       - "8001:8000"
     volumes:
-      - ${HOME}/.cache/hf-vllm:/home/fuisloy/.cache/huggingface
+      - ${HOME}/.cache/huggingface:/home/fuisloy/.cache/huggingface
     ipc: host
+    # command: >
+    #   --model erax-ai/EraX-VL-2B-V1.5
+    #   --host 0.0.0.0
+    #   --port 8001
+    #   --gpu-memory-utilization 0.3
+    #   --
+    # command: >
+    #   --model openai/gpt-oss-20b
+    #   --host 0.0.0.0
+    #   --port 8001
+    #   --gpu-memory-utilization 0.84
+    #   --tool-call-parser openai
+    #   --enable-auto-tool-choice
     command: >
-      --model Qwen/Qwen2.5-7B-Instruct
+      --model google/medgemma-4b-it
       --host 0.0.0.0
       --port 8001
-      --gpu-memory-utilization 0.93
-    networks: [net]
+      --gpu-memory-utilization 0.84
+    # command: >
+    #   --model Qwen/Qwen2.5-7B-Instruct
+    #   --host 0.0.0.0
+    #   --port 8001
+    #   --gpu-memory-utilization 0.86
+    #   --enable-auto-tool-choice
+    #   --tool-call-parser hermes
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+    # networks: [net]
+
+# Qwen/Qwen3-4B-Instruct-2507
+# --model Qwen/Qwen2.5-7B-Instruct
 
   proxy:
     image: nginx:alpine
     ports: ["8002:80"]
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - vllm-embed
-      - vllm-chat
-    networks: [net]
+    # depends_on:
+    #   vllm-embed: 
+    #     condition: service_healthy
+    #   vllm-chat:
+    #     condition: service_healthy
+    # networks: [net]
   
-networks:
-  net:
+# networks:
+  # net:

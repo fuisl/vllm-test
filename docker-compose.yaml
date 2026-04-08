@@ -14,7 +14,7 @@ services:
       --task embed
       --host 0.0.0.0
       --port 8000
-      --gpu-memory-utilization 0.15
+      --gpu-memory-utilization 0.40
     deploy:
       resources:
         reservations:
@@ -39,33 +39,7 @@ services:
       --task score
       --host 0.0.0.0
       --port 8001
-      --gpu-memory-utilization 0.15
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    restart: unless-stopped
-
-  vllm-chat:
-    image: vllm/vllm-openai:latest
-    environment:
-      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
-      - PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-      - VLLM_USE_TRITON_FLASH_ATTENTION=0
-    ports:
-      - "8002:8002"
-    volumes:
-      - ${HOME}/.cache/huggingface:/root/.cache/huggingface
-    ipc: host
-    command: >
-      --model Qwen/Qwen3-8B
-      --host 0.0.0.0
-      --port 8002
-      --gpu-memory-utilization 0.60
-      --max-model-len 32768
+      --gpu-memory-utilization 0.40
     deploy:
       resources:
         reservations:
@@ -96,6 +70,5 @@ services:
     depends_on:
       - vllm-embed
       - vllm-rerank
-      - vllm-chat
       - rerank-adapter
     restart: unless-stopped

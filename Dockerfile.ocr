@@ -1,0 +1,32 @@
+FROM nvidia/cuda:12.1.0-cudnn8-devel-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y \
+    python3 python3-pip python3-dev \
+    libglib2.0-0 libsm6 libxrender1 libxext6 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+# Pin versions per DeepSeek-OCR-2 requirements
+RUN pip install --no-cache-dir \
+    torch==2.6.0 \
+    torchvision \
+    transformers==4.46.3 \
+    tokenizers==0.20.3 \
+    einops \
+    addict \
+    easydict \
+    Pillow \
+    fastapi \
+    uvicorn[standard] \
+    httpx
+
+# flash-attn requires CUDA compile; install after torch
+RUN pip install --no-cache-dir flash-attn==2.7.3 --no-build-isolation
+
+WORKDIR /app
+COPY ocr_service.py .
+
+EXPOSE 8004
+CMD ["uvicorn", "ocr_service:app", "--host", "0.0.0.0", "--port", "8004", "--workers", "1"]

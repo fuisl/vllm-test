@@ -1,0 +1,15 @@
+FROM vllm/vllm-openai:v0.11.2
+
+# MinerU VLM utils with vLLM backend + PDF/image/Vietnamese deps
+RUN pip install --no-cache-dir \
+    "mineru-vl-utils[vllm]" \
+    Pillow \
+    underthesea \
+    fastapi \
+    "uvicorn[standard]"
+
+WORKDIR /app
+COPY mineru_ocr_service.py .
+
+EXPOSE 8004
+CMD ["uvicorn", "mineru_ocr_service:app", "--host", "0.0.0.0", "--port", "8004", "--workers", "1"]

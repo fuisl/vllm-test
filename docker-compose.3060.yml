@@ -1,0 +1,35 @@
+# MinerU2.5-Pro OCR service for RTX 3060 (dedicated OCR GPU)
+# Usage: docker compose -f docker-compose.3060.yml up -d
+#
+# Environment (.env):
+#   HF_TOKEN                 — HuggingFace token to download the model
+#   OCR_MODEL                — model ID (default: opendatalab/MinerU2.5-Pro-2604-1.2B)
+#   GPU_MEMORY_UTILIZATION   — fraction of VRAM for vLLM KV cache (default: 0.70)
+#
+# Exposes:
+#   POST http://localhost:8004/v1/ocr        — { image_b64, lang } -> { markdown }
+#   GET  http://localhost:8004/v1/ocr/health — liveness check
+
+services:
+  mineru-ocr:
+    build:
+      context: .
+      dockerfile: Dockerfile.mineru
+    ports:
+      - "8004:8004"
+    environment:
+      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
+      - OCR_MODEL=${OCR_MODEL:-opendatalab/MinerU2.5-Pro-2604-1.2B}
+      - GPU_MEMORY_UTILIZATION=${GPU_MEMORY_UTILIZATION:-0.70}
+    volumes:
+      - ${HOME}/.cache/huggingface:/root/.cache/huggingface
+    ipc: host
+    shm_size: "8gb"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped

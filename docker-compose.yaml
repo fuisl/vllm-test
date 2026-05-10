@@ -79,30 +79,6 @@ services:
               capabilities: [gpu]
     restart: unless-stopped
 
-  # ─── OCR (DeepSeek-OCR-2, 3B BF16) ─────────────────────────────────────────
-  ocr-service:
-    build:
-      context: .
-      dockerfile: Dockerfile.ocr
-    ports:
-      - "8004:8004"
-    environment:
-      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
-      - OCR_MODEL=${OCR_MODEL:-deepseek-ai/DeepSeek-OCR-2}
-      - OCR_BASE_SIZE=${OCR_BASE_SIZE:-1024}
-      - OCR_IMAGE_SIZE=${OCR_IMAGE_SIZE:-768}
-    volumes:
-      - ${HOME}/.cache/huggingface:/root/.cache/huggingface
-    ipc: host
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    restart: unless-stopped
-
   # ─── Rerank format adapter (Cohere → vLLM /v1/score) ────────────────────────
   rerank-adapter:
     build:
@@ -127,6 +103,5 @@ services:
       - vllm-embed
       - vllm-rerank
       - vllm-llm
-      - ocr-service
       - rerank-adapter
     restart: unless-stopped
